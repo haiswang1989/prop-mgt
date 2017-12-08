@@ -29,7 +29,7 @@ public class ClazzCache {
     
     //host_file ---> reflash的bean
     @Getter
-    private Map<HostConfigFile, Class<?>> hostFile2PropMgtClazz = new HashMap<>();
+    private Map<HostConfigFile, Set<Class<?>>> hostFile2PropMgtClazz = new HashMap<>();
     
     //reflash的bean ---> 回调的bean
     @Getter
@@ -63,26 +63,29 @@ public class ClazzCache {
      */
     public void reflash(HostConfigFile hostConfigFile, Object newJson) {
         //更新field值
-        Class<?> clazz = hostFile2PropMgtClazz.get(hostConfigFile);
-        JSONObject jsonOject = JSONObject.parseObject(newJson.toString());
-        Map<Method, String> methodField = propMgtClazz2FieldKey.get(clazz);
-        for (Map.Entry<Method, String> entry : methodField.entrySet()) {
-            Method method = entry.getKey();
-            String key = entry.getValue();
-            Object value = jsonOject.get(key);
-            setField(method, value, clazz);
-        }
+        Set<Class<?>> classes = hostFile2PropMgtClazz.get(hostConfigFile);
         
-        //update 回调
-        Set<Class<?>> updateCallbackClasses = propMgtClass2PropCallbackClazz.get(clazz);
-        if(CollectionUtils.isNotEmpty(updateCallbackClasses)) {
-            for (Class<?> class1 : updateCallbackClasses) {
-                Object targetBean = applicationContext.getBean(class1);
-                if(targetBean instanceof IUpdateCallback) {
-                    IUpdateCallback callback = (IUpdateCallback)targetBean;
-                    callback.reload();
-                } else {
-                    LOGGER.error("{} is not assign from {}", class1, IUpdateCallback.class);
+        JSONObject jsonOject = JSONObject.parseObject(newJson.toString());
+        for (Class<?> clazz : classes) {
+            Map<Method, String> methodField = propMgtClazz2FieldKey.get(clazz);
+            for (Map.Entry<Method, String> entry : methodField.entrySet()) {
+                Method method = entry.getKey();
+                String key = entry.getValue();
+                Object value = jsonOject.get(key);
+                setField(method, value, clazz);
+            }
+            
+            //update 回调
+            Set<Class<?>> updateCallbackClasses = propMgtClass2PropCallbackClazz.get(clazz);
+            if(CollectionUtils.isNotEmpty(updateCallbackClasses)) {
+                for (Class<?> class1 : updateCallbackClasses) {
+                    Object targetBean = applicationContext.getBean(class1);
+                    if(targetBean instanceof IUpdateCallback) {
+                        IUpdateCallback callback = (IUpdateCallback)targetBean;
+                        callback.reload();
+                    } else {
+                        LOGGER.error("{} is not assign from {}", class1, IUpdateCallback.class);
+                    }
                 }
             }
         }

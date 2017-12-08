@@ -4,6 +4,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
+import java.lang.reflect.Modifier;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
@@ -79,7 +80,7 @@ public class PropMgtScan implements InitializingBean,ApplicationContextAware {
      * 
      */
     private void initPropertyHolder() {
-        Map<HostConfigFile, Class<?>> hostFile2PropMgtClazz = ClazzCache.getInstance().getHostFile2PropMgtClazz();
+        Map<HostConfigFile, Set<Class<?>>> hostFile2PropMgtClazz = ClazzCache.getInstance().getHostFile2PropMgtClazz();
         Set<HostConfigFile> hostConfigFiles = hostFile2PropMgtClazz.keySet();
         Set<String> hosts = new HashSet<>();
         for (HostConfigFile hostConfigFile : hostConfigFiles) {
@@ -95,7 +96,7 @@ public class PropMgtScan implements InitializingBean,ApplicationContextAware {
      * 对配置变化进行监听
      */
     private void addZkListener() {
-        Map<HostConfigFile, Class<?>> hostFile2PropMgt = ClazzCache.getInstance().getHostFile2PropMgtClazz();
+        Map<HostConfigFile, Set<Class<?>>> hostFile2PropMgt = ClazzCache.getInstance().getHostFile2PropMgtClazz();
         Set<HostConfigFile> hostConfigFiles = hostFile2PropMgt.keySet();
         for (HostConfigFile hostConfigFile : hostConfigFiles) {
             String fullPath = PropMgtUtils.getFullPath(hostConfigFile.getHost(), hostConfigFile.getFileName());
@@ -138,19 +139,22 @@ public class PropMgtScan implements InitializingBean,ApplicationContextAware {
      * 
      */
     private void setBeanProperties() {
-        Map<HostConfigFile, Class<?>> hostFile2PropMgtClass = ClazzCache.getInstance().getHostFile2PropMgtClazz();
+        Map<HostConfigFile, Set<Class<?>>> hostFile2PropMgtClass = ClazzCache.getInstance().getHostFile2PropMgtClazz();
         Map<Class<?>, Map<Method, String>> propMgtClass2FieldKey = ClazzCache.getInstance().getPropMgtClazz2FieldKey();
-        for (Map.Entry<HostConfigFile, Class<?>> entry : hostFile2PropMgtClass.entrySet()) {
+        for (Map.Entry<HostConfigFile, Set<Class<?>>> entry : hostFile2PropMgtClass.entrySet()) {
             HostConfigFile hostConfigFile = entry.getKey();
             Map<String, Object> keyValues = PropMgtBiz.getProperties(hostConfigFile);
             
-            Class<?> clazz = entry.getValue();
-            Map<Method, String> method2FieldKey = propMgtClass2FieldKey.get(clazz);
-            for (Map.Entry<Method, String> entry1 : method2FieldKey.entrySet()) {
-                Method method = entry1.getKey();
-                String key = entry1.getValue();
-                Object value = keyValues.get(key);
-                setField(method, value, clazz);
+            Set<Class<?>> classes = entry.getValue();
+            
+            for (Class<?> clazz : classes) {
+                Map<Method, String> method2FieldKey = propMgtClass2FieldKey.get(clazz);
+                for (Map.Entry<Method, String> entry1 : method2FieldKey.entrySet()) {
+                    Method method = entry1.getKey();
+                    String key = entry1.getValue();
+                    Object value = keyValues.get(key);
+                    setField(method, value, clazz);
+                }
             }
         }
     }
@@ -162,11 +166,22 @@ public class PropMgtScan implements InitializingBean,ApplicationContextAware {
      * @param clazz
      */
     private void setField(Method method, Object value, Class<?> clazz) {
-        Object bean = applicationContext.getBean(clazz);
-        try {
-            method.invoke(bean, value);
-        } catch (IllegalAccessException | IllegalArgumentException | InvocationTargetException e) {
-            LOGGER.error("Invoke set method failed", e);
+        int modifier = method.getModifiers();
+        if(Modifier.isStatic(modifier)) {
+            //静态方法
+            try {
+                method.invoke(null, value);
+            } catch (IllegalAccessException | IllegalArgumentException | InvocationTargetException e) {
+                LOGGER.error("Invoke static set method failed", e);
+            }
+        } else {
+            //非静态方法
+            Object bean = applicationContext.getBean(clazz);
+            try {
+                method.invoke(bean, value);
+            } catch (IllegalAccessException | IllegalArgumentException | InvocationTargetException e) {
+                LOGGER.error("Invoke set method failed", e);
+            }
         }
     }
     
@@ -261,7 +276,15 @@ public class PropMgtScan implements InitializingBean,ApplicationContextAware {
         }
         
         //class进行缓存
-        ClazzCache.getInstance().getHostFile2PropMgtClazz().put(new HostConfigFile(host, filename), currClazz);
+        Map<HostConfigFile, Set<Class<?>>> hostFile2PropMgtClazz = ClazzCache.getInstance().getHostFile2PropMgtClazz();
+        HostConfigFile hostConfigFile = new HostConfigFile(host, filename);
+        Set<Class<?>> classes = hostFile2PropMgtClazz.get(hostConfigFile);
+        if(null==classes) {
+            classes = new HashSet<>();
+        }
+        
+        classes.add(currClazz);
+        hostFile2PropMgtClazz.put(hostConfigFile, classes);
     }
     
     /**

@@ -7,6 +7,7 @@ import org.springframework.stereotype.Component;
 
 import com.prop.mgt.client.cache.PropertyHolder;
 import com.prop.mgt.demo.config.Config;
+import com.prop.mgt.demo.config.StaticConfig;
 
 @ImportResource("classpath:applicationContext.xml")
 @Component
@@ -17,6 +18,9 @@ public class Main {
         Main main = context.getBean(Main.class);
         Config config = context.getBean(Config.class);
         System.out.println("values : " + config.getZkString());
+        
+        String zkConnect = StaticConfig.getZkString();
+        System.out.println("static value : " + zkConnect);
         
         String value = PropertyHolder.getProperty("www.ebay.com.cn", "zk.properties", "zookeeper.connection");
         System.out.println("values : " + value);
