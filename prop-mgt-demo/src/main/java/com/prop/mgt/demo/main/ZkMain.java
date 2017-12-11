@@ -5,9 +5,14 @@ import org.I0Itec.zkclient.ZkClient;
 public class ZkMain {
 
     public static void main(String[] args) {
-        String zkString = "10.199.188.79:2181,10.199.187.101:2181,10.199.187.102:2181";
-        ZkClient zkClient = new ZkClient(zkString);
-        String data = "{\"zookeeper.connection\":\"10.199.188.79:2181,10.199.187.101:2181,10.199.187.102:2181\"}";
+        
+        String str = "/aaa/bbb";
+        System.out.println(str.substring(str.lastIndexOf("/") + 1));
+        
+        
+//        String zkString = "10.199.188.79:2181,10.199.187.101:2181,10.199.187.102:2181";
+//        ZkClient zkClient = new ZkClient(zkString);
+//        String data = "{\"zookeeper.connection\":\"10.199.188.79:2181,10.199.187.101:2181,10.199.187.102:2181\"}";
 //        
 //        zkClient.create("/propmgt", "", CreateMode.PERSISTENT);
 //        zkClient.create("/propmgt/www.ebay.com.cn", "", CreateMode.PERSISTENT);
@@ -20,8 +25,8 @@ public class ZkMain {
 //        String[] arrgs = str.split("/");
 //        System.out.println(arrgs.length);
         
-        data = "{\"zookeeper.connection\":\"xxx\"}";
-        zkClient.writeData("/propmgt/www.ebay.com.cn/zk.properties", data);
+//        data = "{\"zookeeper.connection\":\"xxx\"}";
+//        zkClient.writeData("/propmgt/www.ebay.com.cn/zk.properties", data);
         
         
     }

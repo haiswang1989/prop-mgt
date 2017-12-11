@@ -9,7 +9,7 @@ package com.prop.mgt.client.common;
 public class PropMgtConsts {
     
     //基础路径
-    public static final String PROP_MGT_BASE_PATH = "/propmgt/";
+    public static final String PROP_MGT_BASE_PATH = "/propmgt";
     
     //目录分隔符
     public static final String PROP_MGT_ZK_SEPARATOR = "/"; 

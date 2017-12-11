@@ -17,7 +17,7 @@ public class PropMgtUtils {
      */
     public static String getHostPath(String host) {
         StringBuffer hostPath = new StringBuffer();
-        hostPath.append(PropMgtConsts.PROP_MGT_BASE_PATH).append(host);
+        hostPath.append(PropMgtConsts.PROP_MGT_BASE_PATH).append(PropMgtConsts.PROP_MGT_ZK_SEPARATOR).append(host);
         return hostPath.toString();
     }
     
@@ -29,7 +29,7 @@ public class PropMgtUtils {
      */
     public static String getFullPath(String host, String propertyFilename) {
         StringBuilder fullPath = new StringBuilder();
-        fullPath.append(PropMgtConsts.PROP_MGT_BASE_PATH).append(host)
+        fullPath.append(PropMgtConsts.PROP_MGT_BASE_PATH).append(PropMgtConsts.PROP_MGT_ZK_SEPARATOR).append(host)
                 .append(PropMgtConsts.PROP_MGT_ZK_SEPARATOR).append(propertyFilename);
         return fullPath.toString();
     }

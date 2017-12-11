@@ -26,11 +26,13 @@ import com.prop.mgt.client.annotation.PropMgtMethod;
 import com.prop.mgt.client.annotation.PropMgtUpdateCallback;
 import com.prop.mgt.client.biz.PropMgtBiz;
 import com.prop.mgt.client.cache.ClazzCache;
+import com.prop.mgt.client.common.PropMgtConsts;
 import com.prop.mgt.client.common.PropMgtUtils;
 import com.prop.mgt.client.exception.PropMgtException;
 import com.prop.mgt.client.model.HostConfigFile;
 import com.prop.mgt.client.util.PackageScanner;
 import com.prop.mgt.client.zookeeper.ZkUtils;
+import com.prop.mgt.client.zookeeper.listener.HostAddListener;
 import com.prop.mgt.client.zookeeper.listener.PropertyUpdateListener;
 
 import lombok.Setter;
@@ -96,12 +98,24 @@ public class PropMgtScan implements InitializingBean,ApplicationContextAware {
      * 对配置变化进行监听
      */
     private void addZkListener() {
+        //
+        addMainListener();
+        
         Map<HostConfigFile, Set<Class<?>>> hostFile2PropMgt = ClazzCache.getInstance().getHostFile2PropMgtClazz();
         Set<HostConfigFile> hostConfigFiles = hostFile2PropMgt.keySet();
         for (HostConfigFile hostConfigFile : hostConfigFiles) {
             String fullPath = PropMgtUtils.getFullPath(hostConfigFile.getHost(), hostConfigFile.getFileName());
             zkClient.subscribeDataChanges(fullPath, new PropertyUpdateListener());
         }
+    }
+    
+    /**
+     * 
+     */
+    private void addMainListener() {
+        //对 /propmgt目录进行监控
+        HostAddListener hostAddListener = new HostAddListener(zkClient);
+        zkClient.subscribeChildChanges(PropMgtConsts.PROP_MGT_BASE_PATH, hostAddListener);
     }
     
     /**
