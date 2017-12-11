@@ -5,6 +5,7 @@ import java.util.HashMap;
 import java.util.Map;
 
 import com.alibaba.fastjson.JSONObject;
+import com.prop.mgt.client.model.HostConfigFile;
 
 /**
  * 
@@ -68,5 +69,28 @@ public class PropertyHolder {
         }
         
         return (Map<String, Object>)Collections.EMPTY_MAP;
+    }
+    
+    /**
+     * 刷新
+     * @param hostConfigFile
+     * @param newJson
+     */
+    public static void reflash(HostConfigFile hostConfigFile, Object newJson) {
+        JSONObject jsonOject = JSONObject.parseObject(newJson.toString());
+        put(hostConfigFile.getHost(), hostConfigFile.getFileName(), jsonOject);
+    }
+    
+    /**
+     * 删除
+     * @param hostConfigFile
+     */
+    public static void delete(HostConfigFile hostConfigFile) {
+        String host = hostConfigFile.getHost();
+        String filename = hostConfigFile.getFileName();
+        Map<String, Map<String, Object>> map1 = allProperties.get(host);
+        if(null!=map1) {
+            map1.remove(filename);
+        }
     }
 }
